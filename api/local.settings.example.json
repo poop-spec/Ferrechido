@@ -1,0 +1,13 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "SQL_SERVER": "your-server.database.windows.net",
+    "SQL_DATABASE": "ferrechido",
+    "AUTH_ISSUER": "https://your-tenant.ciamlogin.com/your-tenant-id/v2.0/",
+    "AUTH_AUDIENCE": "api://your-api-client-id",
+    "AUTH_REQUIRED_SCOPE": "access_as_user",
+    "AUTH_JWKS_URI": "https://your-tenant.ciamlogin.com/your-tenant-id/discovery/v2.0/keys?p=your-user-flow"
+  }
+}

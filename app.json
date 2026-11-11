@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Ferrechido Paper",
+    "slug": "ferrechido-paper",
+    "version": "1.0.0",
+    "scheme": "ferrechido",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {},
+    "web": {},
+    "plugins": [
+      "expo-status-bar",
+      "expo-web-browser"
+    ]
+  }
+}

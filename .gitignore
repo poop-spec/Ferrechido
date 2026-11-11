@@ -1,0 +1,11 @@
+node_modules/
+.expo/
+dist/
+web-build/
+/ferrechido-paper/
+.env
+.env.*
+!.env.example
+api/local.settings.json
+api/node_modules/
+api/dist/

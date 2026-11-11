@@ -1,0 +1,20 @@
+{
+  "name": "ferrechido-api",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/src/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "func start"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.7.2",
+    "jose": "^6.1.0",
+    "mssql": "^11.0.1"
+  },
+  "devDependencies": {
+    "@types/mssql": "^9.1.8",
+    "@types/node": "^22.15.30",
+    "typescript": "^5.8.3"
+  }
+}
