@@ -13,7 +13,14 @@
     "web": {},
     "plugins": [
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Ferrechido usa tu ubicación para guardar dónde registras cada producto."
+        }
+      ],
+      "expo-font"
     ]
   }
 }

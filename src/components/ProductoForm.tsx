@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Chip, HelperText, Modal, Portal, Text, TextInput, useTheme } from 'react-native-paper';
+import * as Location from 'expo-location';
 import { CATEGORIAS, DatosProducto, Producto } from '../data/productos';
 
 type Props = {
@@ -24,8 +25,41 @@ export default function ProductoForm({ visible, producto, productos, onGuardar, 
   const [precio, setPrecio] = useState('');
   const [icono, setIcono] = useState(CATEGORIAS[0].icono);
   const [errores, setErrores] = useState<Errores>({});
+  const [latitud, setLatitud] = useState<number | null>(null);
+  const [longitud, setLongitud] = useState<number | null>(null);
+  const [estadoUbicacion, setEstadoUbicacion] = useState('');
+  const [capturandoUbicacion, setCapturandoUbicacion] = useState(false);
+  const intentoUbicacion = useRef(0);
 
-  // Cada vez que se abre el formulario se cargan los datos del producto (o se limpia).
+  const capturarUbicacion = useCallback(async () => {
+    const intento = ++intentoUbicacion.current;
+    setCapturandoUbicacion(true);
+    setEstadoUbicacion('Obteniendo ubicación actual…');
+    try {
+      const permiso = await Location.requestForegroundPermissionsAsync();
+      if (intento !== intentoUbicacion.current) return;
+      if (permiso.status !== 'granted') {
+        setEstadoUbicacion('Permite el acceso a tu ubicación para guardar las coordenadas.');
+        return;
+      }
+
+      const posicion = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      if (intento !== intentoUbicacion.current) return;
+      setLatitud(posicion.coords.latitude);
+      setLongitud(posicion.coords.longitude);
+      setEstadoUbicacion('Ubicación actual capturada.');
+    } catch {
+      if (intento === intentoUbicacion.current) {
+        setEstadoUbicacion('No se pudo obtener la ubicación. Puedes intentarlo de nuevo.');
+      }
+    } finally {
+      if (intento === intentoUbicacion.current) setCapturandoUbicacion(false);
+    }
+  }, []);
+
+  // Cada vez que se abre el formulario se cargan los datos del producto.
   useEffect(() => {
     if (!visible) return;
     setNombre(producto?.nombre ?? '');
@@ -34,8 +68,14 @@ export default function ProductoForm({ visible, producto, productos, onGuardar, 
     setStock(producto ? String(producto.stock) : '');
     setPrecio(producto ? String(producto.precio) : '');
     setIcono(producto?.icono ?? CATEGORIAS[0].icono);
+    setLatitud(producto?.latitud ?? null);
+    setLongitud(producto?.longitud ?? null);
     setErrores({});
-  }, [visible, producto]);
+    void capturarUbicacion();
+    return () => {
+      intentoUbicacion.current += 1;
+    };
+  }, [visible, producto, capturarUbicacion]);
 
   const guardar = () => {
     const e: Errores = {};
@@ -64,6 +104,8 @@ export default function ProductoForm({ visible, producto, productos, onGuardar, 
       icono,
       stock: Number(stock.trim()),
       precio: precioNum,
+      latitud,
+      longitud,
     });
   };
 
@@ -129,9 +171,28 @@ export default function ProductoForm({ visible, producto, productos, onGuardar, 
             ))}
           </View>
 
+          <Text variant="labelLarge" style={styles.etiqueta}>Ubicación</Text>
+          <Text variant="bodySmall" style={styles.ubicacion}>
+            {latitud !== null && longitud !== null
+              ? `${latitud.toFixed(6)}, ${longitud.toFixed(6)}`
+              : 'Sin ubicación guardada'}
+          </Text>
+          <HelperText type="info" visible={estadoUbicacion !== ''}>
+            {estadoUbicacion}
+          </HelperText>
+          <Button
+            mode="outlined"
+            icon="crosshairs-gps"
+            loading={capturandoUbicacion}
+            disabled={capturandoUbicacion}
+            onPress={() => void capturarUbicacion()}
+          >
+            Actualizar ubicación
+          </Button>
+
           <View style={styles.acciones}>
             <Button onPress={onCancelar}>Cancelar</Button>
-            <Button mode="contained" onPress={guardar}>
+            <Button mode="contained" loading={capturandoUbicacion} disabled={capturandoUbicacion} onPress={guardar}>
               {producto ? 'Guardar cambios' : 'Agregar'}
             </Button>
           </View>
@@ -148,5 +209,6 @@ const styles = StyleSheet.create({
   mitad: { flex: 1 },
   etiqueta: { marginTop: 4, marginBottom: 8 },
   categorias: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  ubicacion: { marginBottom: 4, opacity: 0.8 },
   acciones: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 20 },
 });

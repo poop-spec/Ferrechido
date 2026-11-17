@@ -10,6 +10,8 @@ type ProductRow = {
   icono: string;
   stock: number;
   precio: number;
+  latitud: number | null;
+  longitud: number | null;
 };
 
 function toProducto(row: ProductRow): Producto {
@@ -18,13 +20,15 @@ function toProducto(row: ProductRow): Producto {
 
 const selectFields = `
   CONVERT(varchar(36), id) AS id,
-  sku, nombre, marca, icono, stock, CAST(precio AS float) AS precio
+  sku, nombre, marca, icono, stock, CAST(precio AS float) AS precio,
+  CAST(latitud AS float) AS latitud, CAST(longitud AS float) AS longitud
 `;
 const outputFields = `
   CONVERT(varchar(36), inserted.id) AS id,
   inserted.sku AS sku, inserted.nombre AS nombre, inserted.marca AS marca,
   inserted.icono AS icono, inserted.stock AS stock,
-  CAST(inserted.precio AS float) AS precio
+  CAST(inserted.precio AS float) AS precio,
+  CAST(inserted.latitud AS float) AS latitud, CAST(inserted.longitud AS float) AS longitud
 `;
 
 export async function listarProductos(): Promise<Producto[]> {
@@ -45,10 +49,12 @@ export async function crearProducto(datos: DatosProducto): Promise<Producto> {
     .input('icono', sql.NVarChar(16), datos.icono)
     .input('stock', sql.Int, datos.stock)
     .input('precio', sql.Decimal(18, 2), datos.precio)
+    .input('latitud', sql.Decimal(9, 6), datos.latitud ?? null)
+    .input('longitud', sql.Decimal(9, 6), datos.longitud ?? null)
     .query<ProductRow>(`
-      INSERT INTO dbo.Products (sku, nombre, marca, icono, stock, precio)
+      INSERT INTO dbo.Products (sku, nombre, marca, icono, stock, precio, latitud, longitud)
       OUTPUT ${outputFields}
-      VALUES (@sku, @nombre, @marca, @icono, @stock, @precio);
+      VALUES (@sku, @nombre, @marca, @icono, @stock, @precio, @latitud, @longitud);
     `);
   return toProducto(result.recordset[0]);
 }
@@ -67,10 +73,13 @@ export async function actualizarProducto(
     .input('icono', sql.NVarChar(16), datos.icono)
     .input('stock', sql.Int, datos.stock)
     .input('precio', sql.Decimal(18, 2), datos.precio)
+    .input('latitud', sql.Decimal(9, 6), datos.latitud ?? null)
+    .input('longitud', sql.Decimal(9, 6), datos.longitud ?? null)
     .query<ProductRow>(`
       UPDATE dbo.Products
       SET sku = @sku, nombre = @nombre, marca = @marca,
-          icono = @icono, stock = @stock, precio = @precio
+          icono = @icono, stock = @stock, precio = @precio,
+          latitud = COALESCE(@latitud, latitud), longitud = COALESCE(@longitud, longitud)
       OUTPUT ${outputFields}
       WHERE id = @id;
     `);

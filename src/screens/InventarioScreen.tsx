@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, Linking, StyleSheet, View } from 'react-native';
 import {
   Appbar,
   Badge,
@@ -240,6 +240,26 @@ export default function InventarioScreen({ accessToken, onLogout }: Props) {
             <Text variant="bodyMedium">
               Precio: {seleccionado ? formatoMoneda(seleccionado.precio) : ''}
             </Text>
+            <Text variant="bodyMedium">
+              Ubicación:{' '}
+              {seleccionado?.latitud != null && seleccionado.longitud != null
+                ? `${seleccionado.latitud.toFixed(6)}, ${seleccionado.longitud.toFixed(6)}`
+                : 'No disponible'}
+            </Text>
+            {seleccionado?.latitud != null && seleccionado.longitud != null && (
+              <Button
+                mode="text"
+                icon="map-marker"
+                onPress={() => {
+                  const url = `https://maps.google.com/?q=${seleccionado.latitud},${seleccionado.longitud}`;
+                  void Linking.openURL(url).catch(() => {
+                    setMensaje('No se pudo abrir la ubicación en el mapa.');
+                  });
+                }}
+              >
+                Ver en mapa
+              </Button>
+            )}
             <View style={styles.accionesDetalle}>
               <Button
                 mode="outlined"

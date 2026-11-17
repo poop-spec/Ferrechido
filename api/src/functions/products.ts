@@ -32,6 +32,24 @@ async function authorize(request: HttpRequest, context: InvocationContext) {
 function isDatosProducto(value: unknown): value is DatosProducto {
   if (typeof value !== 'object' || value === null) return false;
   const datos = value as Record<string, unknown>;
+  const hasLatitude = 'latitud' in datos;
+  const hasLongitude = 'longitud' in datos;
+  const validLocation =
+    (!hasLatitude && !hasLongitude) ||
+    (hasLatitude &&
+      hasLongitude &&
+      (datos.latitud === null ||
+        (typeof datos.latitud === 'number' &&
+          Number.isFinite(datos.latitud) &&
+          datos.latitud >= -90 &&
+          datos.latitud <= 90)) &&
+      (datos.longitud === null ||
+        (typeof datos.longitud === 'number' &&
+          Number.isFinite(datos.longitud) &&
+          datos.longitud >= -180 &&
+          datos.longitud <= 180)) &&
+      ((datos.latitud === null && datos.longitud === null) ||
+        (typeof datos.latitud === 'number' && typeof datos.longitud === 'number')));
   return (
     typeof datos.sku === 'string' &&
     datos.sku.trim().length > 0 &&
@@ -50,7 +68,8 @@ function isDatosProducto(value: unknown): value is DatosProducto {
     typeof datos.precio === 'number' &&
     Number.isFinite(datos.precio) &&
     datos.precio > 0 &&
-    datos.precio <= 9999999999999999
+    datos.precio <= 9999999999999999 &&
+    validLocation
   );
 }
 

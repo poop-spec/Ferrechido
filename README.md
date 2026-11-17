@@ -4,14 +4,15 @@ Expo inventory app with Microsoft Entra External ID sign-in, a protected Azure F
 
 ## What is connected
 
-- The app uses the External ID hosted user flow for sign-up/sign-in. No password is stored by this app.
+- The app uses the External ID hosted user flow for local email/password sign-in. Credentials are entered on the hosted page; no password is stored by this app.
 - Inventory reads and CRUD operations use the Functions API. There is no local/demo inventory fallback.
+- Product create/edit requests capture the device's foreground location (with permission) and save its coordinates; product details can open those coordinates in a map.
 - The API validates Entra bearer tokens and uses the Function App managed identity (or a developer's Azure CLI identity locally) to connect to SQL.
 - The API and database schema are in `api/`.
 
 ## Configure Microsoft Entra External ID
 
-Create an External ID tenant and a sign-up/sign-in user flow. Register two applications:
+Create an External ID tenant and a sign-up/sign-in user flow configured for local accounts with email and password (not Microsoft/social sign-in). The app opens Entra's hosted page for sign-in; the user flow controls registration and password recovery. Register two applications:
 
 1. **Mobile app:** a public/native client (no client secret). Add this redirect URI under the mobile/desktop platform: `ferrechido://redirect`.
 2. **Inventory API:** expose a delegated scope named `access_as_user`, and grant/consent to that scope for the mobile app.
@@ -33,7 +34,7 @@ These are public app configuration values, not secrets. Do not put SQL passwords
 
 ## Create and configure Azure resources
 
-1. Create an Azure SQL logical server and database. Run `api/sql/schema.sql` against the database.
+1. Create an Azure SQL logical server and database. Run `api/sql/schema.sql` against the database. For an existing installation, run `api/sql/add-product-location.sql` to add the nullable product coordinates.
 2. Create a Node.js Azure Function App (Functions v4, Node.js 22).
 3. Enable the Function App's system-assigned managed identity. Create a contained database user for that identity and grant only the needed table permissions:
 

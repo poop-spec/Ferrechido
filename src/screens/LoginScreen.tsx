@@ -70,7 +70,7 @@ export default function LoginScreen({ onLogin }: Props) {
         discovery
       );
       if (!tokens.accessToken) {
-        throw new Error('Microsoft no devolvió un token para acceder a la API.');
+        throw new Error('El proveedor de inicio de sesión no devolvió un token para acceder a la API.');
       }
       onLogin(tokens.accessToken);
     } catch (error) {
@@ -111,11 +111,11 @@ export default function LoginScreen({ onLogin }: Props) {
           disabled={cargando || !configuracionCompleta || !request}
           contentStyle={styles.botonContenido}
         >
-          INICIAR SESIÓN CON MICROSOFT
+          INICIAR SESIÓN CON CORREO Y CONTRASEÑA
         </Button>
 
         <Text variant="bodySmall" style={[styles.pista, { color: theme.colors.onSurfaceVariant }]}>
-          El registro y la recuperación de contraseña se administran en el portal seguro de Microsoft.
+          Inicia con tu cuenta local. El registro y la recuperación de contraseña se administran en el portal seguro de acceso.
         </Text>
         <HelperText type="error" visible={!configuracionCompleta}>
           Configura las variables EXPO_PUBLIC_ENTRA_* y EXPO_PUBLIC_API_URL en .env.

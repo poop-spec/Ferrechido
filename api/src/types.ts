@@ -6,6 +6,11 @@ export interface Producto {
   icono: string;
   stock: number;
   precio: number;
+  latitud: number | null;
+  longitud: number | null;
 }
 
-export type DatosProducto = Omit<Producto, 'id'>;
+export type DatosProducto = Omit<Producto, 'id' | 'latitud' | 'longitud'> & {
+  latitud?: number | null;
+  longitud?: number | null;
+};

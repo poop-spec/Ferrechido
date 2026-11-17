@@ -6,6 +6,8 @@ CREATE TABLE dbo.Products (
     icono NVARCHAR(16) NOT NULL,
     stock INT NOT NULL,
     precio DECIMAL(18, 2) NOT NULL,
+    latitud DECIMAL(9, 6) NULL,
+    longitud DECIMAL(9, 6) NULL,
     CONSTRAINT PK_Products PRIMARY KEY (id),
     CONSTRAINT UQ_Products_sku UNIQUE (sku),
     CONSTRAINT CK_Products_stock_nonnegative CHECK (stock >= 0),

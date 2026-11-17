@@ -8,9 +8,14 @@ export interface Producto {
   icono: string;
   stock: number;
   precio: number;
+  latitud: number | null;
+  longitud: number | null;
 }
 
-export type DatosProducto = Omit<Producto, 'id'>;
+export type DatosProducto = Omit<Producto, 'id' | 'latitud' | 'longitud'> & {
+  latitud?: number | null;
+  longitud?: number | null;
+};
 
 // Categorias disponibles al crear o editar un producto (definen el icono).
 export const CATEGORIAS = [
@@ -36,10 +41,10 @@ export function formatoMoneda(valor: number): string {
 // Datos de ejemplo tomados de la pantalla de Inventario.
 // Los precios de FIJ-002 y PIN-002 son de ejemplo (no aparecen en la captura).
 export const productosIniciales: Producto[] = [
-  { id: '1', sku: 'HER-001', nombre: 'Martillo Carpintero 20oz', marca: 'Truper', icono: '🔨', stock: 48, precio: 189.5 },
-  { id: '2', sku: 'HER-002', nombre: 'Taladro Percutor 13mm', marca: 'Bosch', icono: '🔨', stock: 7, precio: 1250 },
-  { id: '3', sku: 'HER-003', nombre: 'Desarmador Plano 6"', marca: 'Truper', icono: '🔨', stock: 120, precio: 35 },
-  { id: '4', sku: 'HER-004', nombre: 'Llave Ajustable 12"', marca: 'Pretul', icono: '🔨', stock: 3, precio: 210 },
-  { id: '5', sku: 'FIJ-002', nombre: 'Clavo Acero 2 1/2" (kg)', marca: 'Fastenall', icono: '🔩', stock: 0, precio: 68 },
-  { id: '6', sku: 'PIN-002', nombre: 'Sellador Acrílico 19L', marca: 'Comex', icono: '🎨', stock: 5, precio: 1450 },
+  { id: '1', sku: 'HER-001', nombre: 'Martillo Carpintero 20oz', marca: 'Truper', icono: '🔨', stock: 48, precio: 189.5, latitud: null, longitud: null },
+  { id: '2', sku: 'HER-002', nombre: 'Taladro Percutor 13mm', marca: 'Bosch', icono: '🔨', stock: 7, precio: 1250, latitud: null, longitud: null },
+  { id: '3', sku: 'HER-003', nombre: 'Desarmador Plano 6"', marca: 'Truper', icono: '🔨', stock: 120, precio: 35, latitud: null, longitud: null },
+  { id: '4', sku: 'HER-004', nombre: 'Llave Ajustable 12"', marca: 'Pretul', icono: '🔨', stock: 3, precio: 210, latitud: null, longitud: null },
+  { id: '5', sku: 'FIJ-002', nombre: 'Clavo Acero 2 1/2" (kg)', marca: 'Fastenall', icono: '🔩', stock: 0, precio: 68, latitud: null, longitud: null },
+  { id: '6', sku: 'PIN-002', nombre: 'Sellador Acrílico 19L', marca: 'Comex', icono: '🎨', stock: 5, precio: 1450, latitud: null, longitud: null },
 ];
