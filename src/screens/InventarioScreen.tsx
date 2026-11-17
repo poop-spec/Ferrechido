@@ -22,14 +22,9 @@ import {
   Producto,
   formatoMoneda,
   obtenerEstado,
+  productosIniciales,
 } from '../data/productos';
-import {
-  actualizarProducto,
-  actualizarStock,
-  cargarProductos,
-  crearProducto,
-  eliminarProducto,
-} from '../api/productsApi';
+import { guardarProductosLocales, leerProductosLocales } from '../data/productosStorage';
 
 type Filtro = 'TODOS' | Estado;
 
@@ -39,17 +34,13 @@ const FILTROS: { valor: Filtro; etiqueta: string }[] = [
   { valor: 'BAJO', etiqueta: 'BAJO STOCK' },
 ];
 
-type Props = {
-  accessToken: string;
-  onLogout?: () => void;
-};
-
-export default function InventarioScreen({ accessToken, onLogout }: Props) {
+export default function InventarioScreen() {
   const theme = useTheme();
 
   // Datos
   const [productos, setProductos] = useState<Producto[]>([]);
   const [cargado, setCargado] = useState(false);
+  const [almacenCargado, setAlmacenCargado] = useState(false);
 
   // Búsqueda y filtros
   const [busqueda, setBusqueda] = useState('');
@@ -63,23 +54,35 @@ export default function InventarioScreen({ accessToken, onLogout }: Props) {
   const [porEliminar, setPorEliminar] = useState<Producto | null>(null);
   const [mensaje, setMensaje] = useState('');
 
-  // READ: inventory is loaded from the authenticated Azure API.
   useEffect(() => {
     let activo = true;
-    cargarProductos(accessToken)
+    leerProductosLocales()
       .then((lista) => {
         if (activo) setProductos(lista);
       })
       .catch((error: unknown) => {
-        if (activo) setMensaje(error instanceof Error ? error.message : 'No se pudo cargar el inventario.');
+        if (activo) {
+          setProductos(productosIniciales);
+          setMensaje(error instanceof Error ? error.message : 'No se pudo leer el inventario local.');
+        }
       })
       .finally(() => {
-        if (activo) setCargado(true);
+        if (activo) {
+          setAlmacenCargado(true);
+          setCargado(true);
+        }
       });
     return () => {
       activo = false;
     };
-  }, [accessToken]);
+  }, []);
+
+  useEffect(() => {
+    if (!almacenCargado) return;
+    guardarProductosLocales(productos).catch((error: unknown) => {
+      setMensaje(error instanceof Error ? error.message : 'No se pudo guardar el inventario en este dispositivo.');
+    });
+  }, [productos, almacenCargado]);
 
   const seleccionado = productos.find((p) => p.id === seleccionadoId) ?? null;
   const totalAlertas = productos.filter((p) => obtenerEstado(p) !== 'NORMAL').length;
@@ -109,34 +112,32 @@ export default function InventarioScreen({ accessToken, onLogout }: Props) {
   };
 
   // CREATE / UPDATE (guardar desde el formulario)
-  const guardarFormulario = async (datos: DatosProducto) => {
-    try {
-      if (editando) {
-        const actualizado = await actualizarProducto(accessToken, editando.id, datos);
-        setProductos((actuales) => actuales.map((p) => (p.id === actualizado.id ? actualizado : p)));
-        setMensaje('Producto actualizado');
-      } else {
-        const nuevo = await crearProducto(accessToken, datos);
-        setProductos((actuales) => [nuevo, ...actuales]);
-        setMensaje('Producto agregado');
-      }
-      setFormVisible(false);
-      setEditando(null);
-    } catch (error) {
-      setMensaje(error instanceof Error ? error.message : 'No se pudo guardar el producto.');
+  const guardarFormulario = (datos: DatosProducto) => {
+    if (editando) {
+      const actualizado: Producto = { ...editando, ...datos };
+      setProductos((actuales) => actuales.map((p) => (p.id === actualizado.id ? actualizado : p)));
+      setMensaje('Producto actualizado');
+    } else {
+      const nuevo: Producto = {
+        ...datos,
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        latitud: datos.latitud ?? null,
+        longitud: datos.longitud ?? null,
+      };
+      setProductos((actuales) => [nuevo, ...actuales]);
+      setMensaje('Producto agregado');
     }
+    setFormVisible(false);
+    setEditando(null);
   };
 
   // UPDATE (reabastecer): suma 10 unidades y el estado se recalcula solo.
-  const reabastecer = async (producto: Producto) => {
-    try {
-      const actualizado = await actualizarStock(accessToken, producto.id, producto.stock + 10);
-      setProductos((actuales) => actuales.map((p) => (p.id === actualizado.id ? actualizado : p)));
-      setMensaje('Stock actualizado (+10)');
-      setSeleccionadoId(null);
-    } catch (error) {
-      setMensaje(error instanceof Error ? error.message : 'No se pudo actualizar el stock.');
-    }
+  const reabastecer = (producto: Producto) => {
+    setProductos((actuales) => actuales.map((p) =>
+      p.id === producto.id ? { ...p, stock: p.stock + 10 } : p
+    ));
+    setMensaje('Stock actualizado (+10)');
+    setSeleccionadoId(null);
   };
 
   // DELETE (pide confirmación antes de borrar)
@@ -145,16 +146,11 @@ export default function InventarioScreen({ accessToken, onLogout }: Props) {
     setPorEliminar(producto);
   };
 
-  const confirmarEliminar = async () => {
+  const confirmarEliminar = () => {
     if (!porEliminar) return;
-    try {
-      await eliminarProducto(accessToken, porEliminar.id);
-      setProductos((actuales) => actuales.filter((p) => p.id !== porEliminar.id));
-      setMensaje('Producto eliminado');
-      setPorEliminar(null);
-    } catch (error) {
-      setMensaje(error instanceof Error ? error.message : 'No se pudo eliminar el producto.');
-    }
+    setProductos((actuales) => actuales.filter((p) => p.id !== porEliminar.id));
+    setMensaje('Producto eliminado');
+    setPorEliminar(null);
   };
 
   return (
@@ -165,7 +161,6 @@ export default function InventarioScreen({ accessToken, onLogout }: Props) {
           <Appbar.Action icon="alert-outline" onPress={() => setSoloAlertas(true)} />
           <Badge style={styles.badge}>{totalAlertas}</Badge>
         </View>
-        {onLogout && <Appbar.Action icon="logout" onPress={onLogout} />}
       </Appbar.Header>
 
       <Searchbar
@@ -211,7 +206,7 @@ export default function InventarioScreen({ accessToken, onLogout }: Props) {
         contentContainerStyle={styles.lista}
       />
 
-      <FAB icon="plus" label="Nuevo" style={styles.fab} onPress={abrirNuevo} />
+      <FAB icon="plus" label="Nuevo" style={styles.fab} disabled={!cargado} onPress={abrirNuevo} />
 
       <Snackbar visible={mensaje !== ''} onDismiss={() => setMensaje('')} duration={3000}>
         {mensaje}
@@ -282,7 +277,7 @@ export default function InventarioScreen({ accessToken, onLogout }: Props) {
             <Button
               mode="contained"
               icon="plus"
-              onPress={() => seleccionado && void reabastecer(seleccionado)}
+              onPress={() => seleccionado && reabastecer(seleccionado)}
             >
               Reabastecer +10
             </Button>

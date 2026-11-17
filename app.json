@@ -3,7 +3,6 @@
     "name": "Ferrechido Paper",
     "slug": "ferrechido-paper",
     "version": "1.0.0",
-    "scheme": "ferrechido",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "ios": {
@@ -13,7 +12,6 @@
     "web": {},
     "plugins": [
       "expo-status-bar",
-      "expo-web-browser",
       [
         "expo-location",
         {

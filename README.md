@@ -1,36 +1,12 @@
 # Ferrechido
 
-Expo inventory app with Microsoft Entra External ID sign-in, a protected Azure Functions API, and Azure SQL storage.
+Expo inventory app with no sign-in. Inventory data is stored locally on the device.
 
 ## What is connected
 
-- The app uses the External ID hosted user flow for local email/password sign-in. Credentials are entered on the hosted page; no password is stored by this app.
-- Inventory reads and CRUD operations use the Functions API. There is no local/demo inventory fallback.
-- Product create/edit requests capture the device's foreground location (with permission) and save its coordinates; product details can open those coordinates in a map.
-- The API validates Entra bearer tokens and uses the Function App managed identity (or a developer's Azure CLI identity locally) to connect to SQL.
-- The API and database schema are in `api/`.
-
-## Configure Microsoft Entra External ID
-
-Create an External ID tenant and a sign-up/sign-in user flow configured for local accounts with email and password (not Microsoft/social sign-in). The app opens Entra's hosted page for sign-in; the user flow controls registration and password recovery. Register two applications:
-
-1. **Mobile app:** a public/native client (no client secret). Add this redirect URI under the mobile/desktop platform: `ferrechido://redirect`.
-2. **Inventory API:** expose a delegated scope named `access_as_user`, and grant/consent to that scope for the mobile app.
-
-Use the API scope URI shown in Entra (commonly `api://<api-client-id>/access_as_user`). Set the API app's accepted audience to the corresponding audience value.
-
-Copy `.env.example` to `.env` and set:
-
-| Variable | Value |
-|---|---|
-| `EXPO_PUBLIC_ENTRA_CLIENT_ID` | Mobile app's application (client) ID |
-| `EXPO_PUBLIC_ENTRA_TENANT_DOMAIN` | External tenant domain, e.g. `example.ciamlogin.com` (no scheme) |
-| `EXPO_PUBLIC_ENTRA_TENANT_ID` | External tenant ID |
-| `EXPO_PUBLIC_ENTRA_USER_FLOW` | Sign-up/sign-in user-flow name |
-| `EXPO_PUBLIC_ENTRA_API_SCOPE` | API delegated scope URI |
-| `EXPO_PUBLIC_API_URL` | Functions base URL, e.g. `https://ferrechido-api.azurewebsites.net` |
-
-These are public app configuration values, not secrets. Do not put SQL passwords, client secrets, or signing keys in the Expo app. The redirect scheme is declared in `app.json`; test native sign-in with an Expo development build if Expo Go cannot handle the custom scheme.
+- Product create, edit, restock, and delete operations are saved using device-local storage. Data is not synced between devices and may be removed if the app is uninstalled or its data is cleared.
+- The first launch loads sample inventory. Product forms can capture the device's foreground location (with permission); product details can open those coordinates in a map.
+- The Azure Functions API and SQL database remain in `api/`, but the mobile app does not call them. The API remains protected by Entra bearer-token validation.
 
 ## Create and configure Azure resources
 
@@ -52,12 +28,11 @@ For local API development, copy `api/local.settings.example.json` to `api/local.
 
 ```powershell
 npm install
-Copy-Item .env.example .env
 npm run typecheck
 npx expo start
 ```
 
-In another terminal:
+The Azure Functions API is optional and is not used by the local-only mobile app. To run it for separate API development:
 
 ```powershell
 Set-Location api
@@ -66,7 +41,7 @@ npm run build
 npm start
 ```
 
-The local Functions host requires Azure Functions Core Tools. Its endpoints are `GET/POST /api/products` and `PUT/PATCH/DELETE /api/products/{id}`. Every endpoint requires a valid `Authorization: Bearer <access-token>` token for the API audience.
+The local Functions host requires Azure Functions Core Tools. Its endpoints are `GET/POST /api/products` and `PUT/PATCH/DELETE /api/products/{id}`. Every endpoint requires a valid `Authorization: Bearer <access-token>` token for the API audience; do not make these endpoints anonymous.
 
 ## Azure DevOps
 
